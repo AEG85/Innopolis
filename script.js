@@ -4,6 +4,9 @@ function createNode(element) {
 function append(parent, el) {
     return parent.appendChild(el)
 }
+function average(nums) {
+    return nums.reduce((a, b) => (a + b)) / nums.length;
+}
 const API_KEY_YANDEX = '85eaff1b-ef9e-4c11-89bc-ca01d1ae43de'
 const CITY_NAME = 'Омск'
 const API_URL_GEO_DATA = `https://geocode-maps.yandex.ru/1.x/?apikey=${API_KEY_YANDEX}&geocode=${CITY_NAME}&format=json`
@@ -19,6 +22,8 @@ fetch(API_URL_GEO_DATA).then(
                     return fetch(apiOpenMeteo).then(
                         (resp) => resp.json()).then(
                             function (data) {
+                                // В переменной храняться дни для построения диаграммы
+                                let timeScale = []
                                 let polutionInfo = data.hourly;
                                 let table = createNode('table')
                                 let trPM2_5 = createNode('tr')
@@ -44,22 +49,70 @@ fetch(API_URL_GEO_DATA).then(
                                     td.innerHTML = info;
                                     append(trPM2_5, td);
                                 })
-                                polutionInfo.pm10.map(function (info) {
+                                polutionInfo.pm10.map(function (info, index) {
+                                    const avaragePm10 = []
+                                    let arrayIndex = index
+                                    let dateTimePm10 = polutionInfo.time[arrayIndex]
+                                    let datePm10 = new Date(dateTimePm10)
+                                    let dayOfMonthPm10 = datePm10.getDate()
+                                    if (!polutionInfo.byDayPm10) {
+                                        polutionInfo.byDayPm10 = []
+                                    }
+                                    if (!polutionInfo.byDayPm10[dayOfMonthPm10]) {
+                                        polutionInfo.byDayPm10[dayOfMonthPm10] = []
+                                    }
+                                    polutionInfo.byDayPm10[dayOfMonthPm10].push(info)
                                     let td = createNode('td');
                                     td.innerHTML = info;
                                     td.style.border = '1px solid black'
                                     append(trPM10, td);
                                 })
+                                // Получаем средние значения по дням
+                                polutionInfo.byDayPm10.map(function (data, index) {
+                                    if (!polutionInfo.avaragePm10) {
+                                        polutionInfo.avaragePm10 = []
+                                    }
+                                    polutionInfo.avaragePm10.push(average(data))
+                                })
                                 polutionInfo.time.map(function (info) {
+                                    let date = new Date(info)
                                     let dateTime = info.split('T')
+                                    let dayOfMonth = date.getDate()
+                                    let month = date.getMonth() + 1
+                                    let day = dayOfMonth + '.' + month
                                     let td = createNode('td');
+                                    let convertedDateTime = dateTime[0] + ' ' + dateTime[1]
                                     td.style.border = '1px solid black'
                                     td.style.minWidth = '80px'
-                                    td.innerHTML = dateTime[0] + ' ' + dateTime[1];
+                                    td.innerHTML = convertedDateTime
+                                    // Для построения временной шкалы
+                                    if (!timeScale.includes(day)) {
+                                        timeScale.push(day)
+                                    }
                                     append(trTime, td);
                                 })
                                 let div = document.getElementById('air-pollution')
                                 append(div, table)
+
+                                const ctx = document.getElementById('myChart');
+                                new Chart(ctx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: timeScale,
+                                        datasets: [{
+                                            label: '# Загрязнения pm10',
+                                            data: polutionInfo.avaragePm10,
+                                            borderWidth: 1
+                                        }]
+                                    },
+                                    options: {
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true
+                                            }
+                                        }
+                                    }
+                                });
                             })
                         .catch(function (error) {
                             console.log(error);
@@ -70,4 +123,3 @@ fetch(API_URL_GEO_DATA).then(
     .catch(function (error) {
         console.log(error);
     })
-
