@@ -6,6 +6,17 @@
     <title>Document</title>
 </head>
 <body>
-    
+    <form>
+        <label for="tempreture">Введите числовое значения температуры:</label>
+        <input name="tempreture" type="text" id="temperature-input" value="" placeholder="Число"/>
+        <label for="cels-or-fahr">Выберите единицу измерения:</label>
+        <select name="cels-or-fahr" id="unit-select">
+            <option value="Celsius">Цельсии</option>
+            <option value="Fahrenheit">Фаренгейты</option>
+        </select>
+
+    </form>
+    <p id="result-wrapp">Результат конвертации: <span id="result"></span></p>
+    <script src="/script.js"></script>
 </body>
 </html>
